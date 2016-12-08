@@ -18,13 +18,8 @@ import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-import java.util.Scanner;
+import java.io.*;
+import java.util.*;
 
 /**
  * Created by Anwar on 3/15/2016.
@@ -38,7 +33,7 @@ public class RegressionSum {
     //Number of epochs (full passes of the data)
     public static final int nEpochs = 200;
     //Number of data points
-    public static final int nSamples = 1000;
+    public static final int nSamples = 706541;
     //Batch size: i.e., each epoch has nSamples/batchSize parameter updates
     public static final int batchSize = 100;
     //Network learning rate
@@ -50,13 +45,13 @@ public class RegressionSum {
 
     public static final Random rng = new Random(seed);
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException, InterruptedException {
 
         //Generate the training data
         DataSetIterator iterator = getTrainingData(batchSize,rng);
 
         //Create the network
-        int numInput = 2;
+        int numInput = 16;
         int numOutputs = 1;
         int nHidden = 10;
         MultiLayerNetwork net = new MultiLayerNetwork(new NeuralNetConfiguration.Builder()
@@ -67,10 +62,22 @@ public class RegressionSum {
                 .weightInit(WeightInit.XAVIER)
                 .updater(Updater.NESTEROVS).momentum(0.9)
                 .list()
-                .layer(0, new DenseLayer.Builder().nIn(numInput).nOut(nHidden)
-                        .activation("tanh")
+                .layer(0, new DenseLayer.Builder()
+                        .nIn(numInput)
+                        .nOut(nHidden)
+                        .activation("relu")
                         .build())
-                .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                .layer(1, new DenseLayer.Builder()
+                        .nIn(nHidden)
+                        .nOut(nHidden)
+                        .activation("relu")
+                        .build())
+                .layer(2, new DenseLayer.Builder()
+                        .nIn(nHidden)
+                        .nOut(nHidden)
+                        .activation("relu")
+                        .build())
+                .layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                         .activation("identity")
                         .nIn(nHidden).nOut(numOutputs).build())
                 .pretrain(false).backprop(true).build()
@@ -84,10 +91,11 @@ public class RegressionSum {
             iterator.reset();
             net.fit(iterator);
         }
-        // Test the addition of 2 numbers (Try different numbers here)
+        /* Test the addition of 2 numbers (Try different numbers here)
         final INDArray input = Nd4j.create(new double[] { 0.111111, 0.3333333333333 }, new int[] { 1, 2 });
         INDArray out = net.output(input, false);
         System.out.println(out);
+        */
 
     }
 
@@ -109,24 +117,33 @@ public class RegressionSum {
         double [] input14 = new double[nSamples];
         double [] input15 = new double[nSamples];
         double [] input16 = new double[nSamples];
-        Scanner scan = null;
-        try {
-            scan = new Scanner(new File("dl4j-examples/src/main/java/org/deeplearning4j/examples/feedforward/mnist/full_test_csv_pre_processed.csv"));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        BufferedReader br = new BufferedReader(new FileReader("dl4j-examples/src/main/java/org/deeplearning4j/examples/feedforward/mnist/full_train_csv_pre_processed.csv"));
+        String line = "";
+        String separator = ",";
+        int it = 0;
+
+        while((line = br.readLine()) != null) {
+            String[] data = line.split(separator);
+            input1[it] = Double.parseDouble(data[0]);
+            input2[it] = Double.parseDouble(data[1]);
+            input3[it] = Double.parseDouble(data[2]);
+            input4[it] = Double.parseDouble(data[3]);
+            input5[it] = Double.parseDouble(data[4]);
+            input6[it] = Double.parseDouble(data[5]);
+            input7[it] = Double.parseDouble(data[6]);
+            input8[it] = Double.parseDouble(data[7]);
+            input9[it] = Double.parseDouble(data[8]);
+            input10[it] = Double.parseDouble(data[9]);
+            input11[it] = Double.parseDouble(data[10]);
+            input12[it] = Double.parseDouble(data[11]);
+            input13[it] = Double.parseDouble(data[12]);
+            input14[it] = Double.parseDouble(data[13]);
+            input15[it] = Double.parseDouble(data[14]);
+            input16[it] = Double.parseDouble(data[15]);
+            output[it] = Double.parseDouble(data[16]);
+            it += 1;
         }
-        scan.useDelimiter(",");
-        while(scan.hasNext()) {
 
-        }
-
-
-
-        for (int i= 0; i< nSamples; i++) {
-            input1[i] = MIN_RANGE + (MAX_RANGE - MIN_RANGE) * rand.nextDouble();
-            input2[i] =  MIN_RANGE + (MAX_RANGE - MIN_RANGE) * rand.nextDouble();
-            output[i] = input1[i] + input2[i];
-        }
         INDArray inputNDArray1 = Nd4j.create(input1, new int[]{nSamples,1});
         INDArray inputNDArray2 = Nd4j.create(input2, new int[]{nSamples,1});
         INDArray inputNDArray3 = Nd4j.create(input3, new int[]{nSamples,1});
@@ -148,6 +165,7 @@ public class RegressionSum {
             inputNDArray7,inputNDArray8,inputNDArray9,inputNDArray10,inputNDArray11,inputNDArray12,inputNDArray13,inputNDArray14,
             inputNDArray15,inputNDArray16);
         INDArray outPut = Nd4j.create(output, new int[]{nSamples, 1});
+
         DataSet dataSet = new DataSet(inputNDArray, outPut);
         List<DataSet> listDs = dataSet.asList();
         return new ListDataSetIterator(listDs,batchSize);
